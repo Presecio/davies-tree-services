@@ -499,7 +499,7 @@
           <span class="chip">Salamander Bay</span><span class="chip">Nelson Bay</span><span class="chip">Medowie</span>
           <span class="chip">Raymond Terrace</span><span class="chip">Anna Bay</span><span class="chip">Soldiers Point</span>
           <span class="chip">Corlette</span><span class="chip">Fingal Bay</span><span class="chip">Tanilba Bay</span>
-          <span class="chip">Lemon Tree Passage</span><span class="chip">Karuah</span><span class="chip">Williamtown</span>
+          <span class="chip">Lemon Tree Passage</span><span class="chip">Williamtown</span>
         </div>
       </div>
     </div>
@@ -668,16 +668,19 @@
         </div>
       </div>
       <div class="quote-right">
-        <form onsubmit="handleQuote(event)">
+        <form id="quote-form" onsubmit="handleQuote(event)">
+          <input type="hidden" name="access_key" value="a87fc295-c742-48f0-9c9f-2bf16c3ec013">
+          <input type="hidden" name="subject" value="New quote request — Davies Tree Services">
+          <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off">
           <div class="form-row">
-            <div><label for="q-name">Name</label><input id="q-name" required placeholder="Your name"></div>
-            <div><label for="q-phone">Phone</label><input id="q-phone" required placeholder="04xx xxx xxx"></div>
+            <div><label for="q-name">Name</label><input id="q-name" name="name" required placeholder="Your name"></div>
+            <div><label for="q-phone">Phone</label><input id="q-phone" name="phone" required placeholder="04xx xxx xxx"></div>
           </div>
           <div class="form-row">
-            <div><label for="q-suburb">Suburb</label><input id="q-suburb" required placeholder="e.g. Medowie"></div>
+            <div><label for="q-suburb">Suburb</label><input id="q-suburb" name="suburb" required placeholder="e.g. Medowie"></div>
             <div>
               <label for="q-service">Service needed</label>
-              <select id="q-service">
+              <select id="q-service" name="service">
                 <option>Tree removal / pruning</option>
                 <option>Stump grinding</option>
                 <option>Hedging</option>
@@ -688,9 +691,9 @@
           </div>
           <div>
             <label for="q-msg">A bit about the job</label>
-            <textarea id="q-msg" placeholder="Number of trees, rough size, anything overhanging power lines or the roof..."></textarea>
+            <textarea id="q-msg" name="message" placeholder="Number of trees, rough size, anything overhanging power lines or the roof..."></textarea>
           </div>
-          <button class="btn btn-bark" type="submit" style="justify-content:center;margin-top:6px;">Request my free quote</button>
+          <button class="btn btn-bark" type="submit" id="q-submit" style="justify-content:center;margin-top:6px;">Request my free quote</button>
           <p class="form-note" id="q-status">We'll text or call back, usually within a day.</p>
         </form>
       </div>
@@ -698,9 +701,11 @@
   </div>
 </section>
 <script>
-  function handleQuote(e){
+  async function handleQuote(e){
     e.preventDefault();
+    const form = document.getElementById('quote-form');
     const status = document.getElementById('q-status');
+    const submitBtn = document.getElementById('q-submit');
     const name = document.getElementById('q-name').value.trim();
     const phone = document.getElementById('q-phone').value.trim();
     const suburb = document.getElementById('q-suburb').value.trim();
@@ -709,9 +714,35 @@
       status.style.color = "#a83e2f";
       return;
     }
-    status.textContent = "Thanks " + name.split(' ')[0] + " — request received. We'll be in touch shortly.";
-    status.style.color = "var(--moss)";
-    e.target.reset();
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Sending...";
+    status.textContent = "Sending your request...";
+    status.style.color = "var(--ink-soft)";
+    try {
+      const formData = new FormData(form);
+      const object = Object.fromEntries(formData);
+      const json = JSON.stringify(object);
+      const res = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: json
+      });
+      const result = await res.json();
+      if (result.success) {
+        status.textContent = "Thanks " + name.split(' ')[0] + " — request received. We'll be in touch shortly.";
+        status.style.color = "var(--moss)";
+        form.reset();
+      } else {
+        status.textContent = "Something went wrong sending that. Please call us on 0432 739 097 instead.";
+        status.style.color = "#a83e2f";
+      }
+    } catch (err) {
+      status.textContent = "Something went wrong sending that. Please call us on 0432 739 097 instead.";
+      status.style.color = "#a83e2f";
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Request my free quote";
+    }
   }
 </script>
 
